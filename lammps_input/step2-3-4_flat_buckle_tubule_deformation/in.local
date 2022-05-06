@@ -1,0 +1,269 @@
+units           lj
+atom_style      hybrid sphere dipole molecular
+
+
+dimension       3 
+boundary        p p s
+processors 	* * 1   # set the number of MPI processors in Lz direction to 1
+
+bond_style	harmonic
+read_data       lastconfig.in 
+
+group	     	mem	  type 1
+group     	spiral1       type 2:4  # rigid polymer
+group     	spiral2       type 5:10 # rigid polymer
+#group     	spiral3       type 8:10  # rigid polymer
+group     	cargo       type 11 
+
+set group all mass 1.0
+
+# membrane parameters
+variable        rc_global    equal    2.6
+variable        rc           equal    2.6
+variable        rmin         equal    1.12
+variable        mu           equal    3
+variable        zeta         equal    4
+variable        eps          equal    4.34
+variable        sigma        equal    1.00
+variable        theta0_11    equal    0
+
+
+# interaction parameters
+# membrane 1 with membrane spiral bead 4 (upper):
+variable	sigma_spiral	equal	1.00
+variable	sigma_mu	  equal    (${sigma}+${sigma_spiral})/2
+variable	eps_mu	   	  equal    2
+variable	rc_mu	 	  equal	 (1.122462)*(${sigma_spiral}+${sigma})/2
+
+# membrane 1 with membrane spiral bead 2,3 (inner, outer):
+variable	sigma_spiral	equal	1.00
+variable	sigma_ms	  equal    (${sigma}+${sigma_spiral})/2
+variable	eps_ms	   	  equal    3
+variable	rc_ms	 	  equal	 (1.122462)*(${sigma_spiral}+${sigma})/2*1.3
+
+# volume exclusion between spiral beads 2,3,4:
+variable	eps_ss	   	  equal    2
+variable	sigma_ss	  equal   ${sigma_spiral}
+variable	rc_ss	 	  equal	 (1.122462)*${sigma_spiral}
+
+# type 2 with tpe 6, type 5 with type 9 
+variable	eps_ss2	   	  equal    3
+variable	sigma_ss	  equal   ${sigma_spiral}
+variable	rc_ss2	 	  equal	 (1.122462)*${sigma_spiral}*1.3
+
+########### membrane and cargo -- LJ
+variable        sigma_c           equal    16.00
+variable	eps_mc	   	  equal    0.6 
+variable	sigma_mc	  equal   (${sigma}+${sigma_c})/2
+variable	rc_mc	 	  equal	 (1.122462)*${sigma_mc}*1.3
+
+########### cargo with ESCRT -- volex for all
+variable	eps_sc	   	  equal    2
+variable        sigma_sc          equal  (${sigma_c}+${sigma_spiral})/2
+variable	rc_sc	 	  equal	 (1.122462)*${sigma_sc}
+
+
+bond_coeff         1      256          1.744194821
+bond_coeff         2      256          1.96898089935
+bond_coeff         3      256          1.94410665289
+bond_coeff         4      256          1.96898089935
+bond_coeff         5      256          1.855805179
+bond_coeff         6      256          1.99510634358
+bond_coeff         7      256          1.94410665289
+bond_coeff         8      256          1.99510634358
+bond_coeff         9      256          1.8
+bond_coeff         10      256          1.57677947461
+bond_coeff         11      256          1.87138153045
+bond_coeff         12      256          1.82048102765
+bond_coeff         13      256          1.76103671221
+bond_coeff         14      256          1.68805879481
+bond_coeff         15      256          1.81532267056
+bond_coeff         16      256          1.76457981022
+bond_coeff         17      256          1.86970737379
+bond_coeff         18      256          1.63241348473
+
+# Use hybrid overlay for pair_style membrane and lj/cut
+pair_style      hybrid/overlay  membrane     ${rc_global}  lj/cut ${rc_global}
+
+# pw359: Initialise LJ/expand to zero for all possible combinations 
+pair_coeff      *      *    lj/cut    0  0    
+########### spiral 1 #############
+# membrane attraction
+pair_coeff      1      2    lj/cut    ${eps_ms}  ${sigma_ms}    	${rc_ms}
+pair_coeff      1      3    lj/cut    ${eps_ms}  ${sigma_ms}    	${rc_ms}
+# volume exclusion membrane - spiral
+pair_coeff      1      4    lj/cut    ${eps_mu}  ${sigma_mu}    	${rc_mu}
+# volume exclusion spiral - spiral
+pair_coeff      2      2    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      2      3    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      2      4    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      3      3    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      3      4    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      4      4    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+
+########### spiral 2 #############
+# membrane attraction
+pair_coeff      1      5    lj/cut    ${eps_ms}  ${sigma_ms}    	${rc_ms}
+pair_coeff      1      6    lj/cut    ${eps_ms}  ${sigma_ms}    	${rc_ms}
+# volume exclusion membrane - spiral
+pair_coeff      1      7    lj/cut    ${eps_mu}  ${sigma_mu}    	${rc_mu}
+# volume exclusion spiral - spiral
+pair_coeff      5      5    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      5      6    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      5      7    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      6      6    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      6      7    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      7      7    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+
+########### spiral 3 #############
+# membrane attraction
+pair_coeff      1      8    lj/cut    ${eps_ms}  ${sigma_ms}    	${rc_ms}
+pair_coeff      1      9    lj/cut    ${eps_ms}  ${sigma_ms}    	${rc_ms}
+# volume exclusion membrane - spiral
+pair_coeff      1      10    lj/cut    ${eps_mu}  ${sigma_mu}    	${rc_mu}
+# volume exclusion spiral - spiral
+pair_coeff      8      8    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      8      9    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      8      10    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      9      9    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      9      10    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      10      10    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+
+############## spiral 1 and spiral 2
+# volume exclusion spiral - spiral
+pair_coeff      2      5    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      2      6    lj/cut    ${eps_ss2}  ${sigma_ss}        	${rc_ss2}
+pair_coeff      2      7    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      3      5    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      3      6    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      3      7    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      4      5    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      4      6    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      4      7    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+
+############## spiral 2 and spiral 3
+# volume exclusion spiral - spiral
+pair_coeff      5      8    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      5      9    lj/cut    ${eps_ss2}  ${sigma_ss}        	${rc_ss2}
+pair_coeff      5      10    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      6      8    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      6      9    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      6      10    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      7      8    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      7      9    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      7      10    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+
+############## spiral 1 and spiral 3
+# volume exclusion spiral - spiral
+pair_coeff      2      8    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      2      9    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      2      10   lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      3      8    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      3      9    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      3      10   lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      4      8    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      4      9    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+pair_coeff      4      10   lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+
+########### membrane and cargo
+pair_coeff      1      11   lj/cut    ${eps_mc}  ${sigma_mc}            ${rc_mc}
+########### cargo with ESCRT -- volex for all
+pair_coeff      2      11   lj/cut    ${eps_sc}  ${sigma_sc}            ${rc_sc}
+pair_coeff      3      11   lj/cut    ${eps_sc}  ${sigma_sc}            ${rc_sc}
+pair_coeff      4      11   lj/cut    ${eps_sc}  ${sigma_sc}            ${rc_sc}
+pair_coeff      5      11   lj/cut    ${eps_sc}  ${sigma_sc}            ${rc_sc}
+pair_coeff      6      11   lj/cut    ${eps_sc}  ${sigma_sc}            ${rc_sc}
+pair_coeff      7      11   lj/cut    ${eps_sc}  ${sigma_sc}            ${rc_sc}
+pair_coeff      8      11   lj/cut    ${eps_sc}  ${sigma_sc}            ${rc_sc}
+pair_coeff      9      11   lj/cut    ${eps_sc}  ${sigma_sc}            ${rc_sc}
+pair_coeff      10      11   lj/cut    ${eps_sc}  ${sigma_sc}            ${rc_sc}
+
+
+#        same here for intra-membrane interactions
+pair_coeff	1      1        membrane     ${eps}        ${sigma}       ${rmin}       ${rc}     ${zeta}  ${mu}  ${theta0_11}
+special_bonds lj 1 1 1 angle yes
+
+pair_modify			shift yes
+
+# Reduce the delay from default 10 to 2 to get rid of dangeours builds
+#neigh_modify 	exclude molecule/intra spiral
+neigh_modify	exclude molecule spiral1
+neigh_modify	exclude molecule spiral2
+#neigh_modify	exclude molecule spiral3
+neigh_modify    delay 1
+neigh_modify    page 200000 one 20000
+
+comm_modify     cutoff 10
+
+variable       dofsub      equal "count(mem)"
+compute	       cT          all    temp/sphere
+compute_modify cT          extra  ${dofsub}
+
+compute         cKe     all ke
+compute         cPe     all pe
+compute         cErot   all erotate/sphere
+variable          E       equal c_cKe+c_cPe+c_cErot
+variable	 K      equal c_cKe
+variable	 P      equal c_cPe
+variable	 Rot    equal c_cErot
+
+
+compute emem all pair membrane
+compute elj all pair lj/cut
+
+
+######################## INTEGRATORS ###########################
+fix		fLANG	    all    langevin 1.0 1.0 1 12341 zero yes omega yes
+fix		fNPH  	    mem     nph/sphere x 0.0 0.0 10 y 0.0 0.0 10 &
+		couple xy  update dipole dilate all
+fix_modify	fNPH        temp cT press thermo_press 
+
+
+#fix filament spiral rigid/nve/small molecule
+
+
+dump			coords all custom 1000 output.xyz id mol type x y z mux muy muz
+dump_modify     coords sort id
+
+
+thermo_style    custom step v_E v_P v_K v_Rot temp c_emem c_elj xhi yhi zhi
+restart 1000       restart1.dat     restart2.dat 
+
+fix 0 cargo nve
+timestep       0.001
+thermo         2000
+run            10000
+
+fix 1 spiral1 rigid/nve/small molecule
+fix 2 spiral2 rigid/nve/small molecule
+
+timestep       0.01
+thermo         2000
+run            1000000
+
+write_data "lastconfig.step2"
+
+# step3-tau1_0_tau2_90 
+bond_coeff         10      256          1.8
+bond_coeff         11      256          1.96977156036
+bond_coeff         12      256          1.92510172988
+bond_coeff         13      256          1.96977156036
+bond_coeff         14      256          1.8
+bond_coeff         15      256          1.92510172988
+bond_coeff         16      256          1.92510172988
+bond_coeff         17      256          1.92510172988
+bond_coeff         18      256          1.70334259465
+
+run            1000000
+write_data "lastconfig.step3"
+
+# step4-tau2_90
+pair_coeff      1      2    lj/cut    ${eps_mu}  ${sigma_mu}    	${rc_mu}
+pair_coeff      1      3    lj/cut    ${eps_mu}  ${sigma_mu}    	${rc_mu}
+pair_coeff      2      6    lj/cut    ${eps_ss}  ${sigma_ss}        	${rc_ss}
+
+delete_bonds    spiral1    multi
+
+run            1000000
+write_data "lastconfig.step4"
+
